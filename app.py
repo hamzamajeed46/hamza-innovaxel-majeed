@@ -47,7 +47,6 @@ def shorten_url():
         }), 201
     else:
         return jsonify({"error": "Failed to create short URL"}), 500
-from flask import Flask, request, jsonify, redirect
 
 @app.route('/shorten/<short_code>', methods=['GET'])
 def retrieve_url(short_code):
@@ -104,6 +103,23 @@ def delete_url(short_code):
     return jsonify({
         "message": "Short URL deleted successfully!",
         "short_code": short_code
+    }), 200
+
+@app.route('/shorten/<short_code>/stats', methods=['GET'])
+def get_url_stats(short_code):
+    # Find the document with the given short_code
+    url_document = mongo.db.urls.find_one({"short_code": short_code})
+
+    if not url_document:
+        return jsonify({"error": "Short URL not found"}), 404
+
+    # Return the statistics
+    return jsonify({
+        "short_code": short_code,
+        "original_url": url_document["original_url"],
+        "created_at": url_document["created_at"],
+        "updated_at": url_document["updated_at"],
+        "access_count": url_document["access_count"]
     }), 200
 
 @app.route('/')
