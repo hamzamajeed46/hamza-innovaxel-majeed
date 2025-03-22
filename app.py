@@ -23,6 +23,15 @@ def shorten_url():
     if not original_url:
         return jsonify({"error": "Original URL is required"}), 400
 
+    # Check if the original URL already exists
+    existing_url = mongo.db.urls.find_one({"original_url": original_url})
+    if existing_url:
+        return jsonify({
+            "message": "Original URL is already shortened!",
+            "short_code": existing_url["short_code"],
+            "original_url": original_url
+        }), 200
+
     # Generate a unique short code
     short_code = generate_short_code()
     while mongo.db.urls.find_one({"short_code": short_code}):
