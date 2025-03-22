@@ -1,6 +1,7 @@
 # Flask Project
 
 This is a simple Flask web application.
+Go to dev branch to see code.
 
 ## Project Structure
 
