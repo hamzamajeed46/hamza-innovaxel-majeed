@@ -1,10 +1,15 @@
-from flask import Flask, render_template
+from flask import Flask
+from flask_pymongo import PyMongo
 
 app = Flask(__name__)
 
-@app.route("/")
+# MongoDB configuration
+app.config["MONGO_URI"] = "mongodb://localhost:27017/url_shortener"
+mongo = PyMongo(app)
+
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return "MongoDB connection is set up!"
 
 if __name__ == "__main__":
     app.run(debug=True)
