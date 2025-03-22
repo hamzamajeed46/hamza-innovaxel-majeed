@@ -157,10 +157,10 @@ def get_url_stats(short_code):
         return jsonify({"error": "Short URL not found"}), 404
 
     return jsonify({
-        "short_code": short_code,
+        "short_code": url_document["short_code"],
         "original_url": url_document["original_url"],
-        "created_at": url_document["created_at"],
-        "updated_at": url_document["updated_at"],
+        "created_at": url_document["created_at"].isoformat(),
+        "updated_at": url_document["updated_at"].isoformat(),
         "access_count": url_document["access_count"]
     }), 200
 

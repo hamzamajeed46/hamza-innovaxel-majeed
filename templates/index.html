@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+    <script src="/static/main.js"></script>
     <section class="container">
         <h1>URL Shortener</h1>
         <div class="box-container">
@@ -42,7 +43,7 @@
         </div>
     </section>
 
-    <section class="container">
+    <section class="box-container">
         <div class="box">
         <!-- Form to retrieve a URL -->
         <h2>Retrieve an existing URL</h2>
@@ -62,43 +63,33 @@
         <div id="error">{{ error }}</div>
         {% endif %}
     </div>
+    
+
+    <div class="box">
+        <h2>Delete a Short URL</h2>
+        <!-- Form to delete a short URL -->
+        <form id="delete-form">
+            <label for="short_code_delete">Enter Short Code to Delete:</label>
+            <input type="text" id="short_code_delete" name="short_code" placeholder="e.g., abc123" required>
+            <button type="submit">Delete URL</button>
+        </form>
+
+        <div id="delete-result" style="margin-top: 20px;"></div>
+    </div>
     </section>
 
-    <script>
-        const updateForm = document.getElementById('update-form');
-        const updateResult = document.getElementById('update-result');
+    <section class="box-container">
+        <div class="box">
+            <h2>URL Statistics</h2>
+            <form id="stats-form">
+                <label for="short_code_stats">Enter Short Code:</label>
+                <input type="text" id="short_code_stats" name="short_code" placeholder="e.g., abc123" required>
+                <button type="submit">Get Statistics</button>
+            </form>
+            <div id="stats-result" class="stats-container"></div>
+        </div>
+    </section>
 
-        updateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const shortCode = document.getElementById('short_code_update').value;
-            const newOriginalUrl = document.getElementById('new_original_url').value;
-
-            if (!shortCode || !newOriginalUrl) {
-                updateResult.innerHTML = '<p style="color: red;">Both fields are required.</p>';
-                return;
-            }
-
-            try {
-                const response = await fetch(`/shorten/${shortCode}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ original_url: newOriginalUrl }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    updateResult.innerHTML = `<p style="color: green;">${data.message}</p>`;
-                } else {
-                    updateResult.innerHTML = `<p style="color: red;">${data.error}</p>`;
-                }
-            } catch (error) {
-                updateResult.innerHTML = '<p style="color: red;">An error occurred while updating the URL.</p>';
-            }
-        });
-    </script>
+    
 </body>
 </html>
