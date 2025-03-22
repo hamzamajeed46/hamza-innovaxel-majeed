@@ -3,6 +3,7 @@ from flask_pymongo import PyMongo
 from datetime import datetime
 import random
 import string
+import re
 
 app = Flask(__name__)
 
@@ -10,9 +11,21 @@ app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/url_shortener"
 mongo = PyMongo(app)
 
+# Helper function to validate URLs
+def is_valid_url(url):
+    url_regex = re.compile(
+        r'^(https?:\/\/)?'  # http:// or https://
+        r'(([a-zA-Z0-9_-]+\.)+[a-zA-Z]{2,})'  # domain
+        r'(\/[a-zA-Z0-9._~:/?#[\]@!$&\'()*+,;=-]*)?$'  # path
+    )
+    return re.match(url_regex, url) is not None
+
 # Generate a unique short code
 def generate_short_code():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+    while True:
+        short_code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        if not mongo.db.urls.find_one({"short_code": short_code}):
+            return short_code
 
 # Endpoint to create a short URL
 @app.route('/shorten', methods=['POST'])
@@ -22,6 +35,9 @@ def shorten_url():
 
     if not original_url:
         return jsonify({"error": "Original URL is required"}), 400
+
+    if not is_valid_url(original_url):
+        return jsonify({"error": "Invalid URL format"}), 400
 
     # Check if the original URL already exists
     existing_url = mongo.db.urls.find_one({"original_url": original_url})
@@ -34,8 +50,6 @@ def shorten_url():
 
     # Generate a unique short code
     short_code = generate_short_code()
-    while mongo.db.urls.find_one({"short_code": short_code}):
-        short_code = generate_short_code()
 
     # Create the document
     url_document = {
@@ -57,6 +71,7 @@ def shorten_url():
     else:
         return jsonify({"error": "Failed to create short URL"}), 500
 
+# Endpoint to retrieve the original URL
 @app.route('/shorten/<short_code>', methods=['GET'])
 def retrieve_url(short_code):
     # Find the document with the given short_code
@@ -71,19 +86,20 @@ def retrieve_url(short_code):
         {"$inc": {"access_count": 1}}
     )
 
-    # Redirect to the original URL
     return redirect(url_document["original_url"])
 
+# Endpoint to update the original URL
 @app.route('/shorten/<short_code>', methods=['PUT'])
 def update_url(short_code):
-    # Get the new data from the request
     data = request.get_json()
     new_original_url = data.get('original_url')
 
     if not new_original_url:
         return jsonify({"error": "Original URL is required"}), 400
 
-    # Find and update the document with the given short_code
+    if not is_valid_url(new_original_url):
+        return jsonify({"error": "Invalid URL format"}), 400
+
     result = mongo.db.urls.update_one(
         {"short_code": short_code},
         {"$set": {
@@ -101,9 +117,9 @@ def update_url(short_code):
         "new_original_url": new_original_url
     }), 200
 
+# Endpoint to delete a short URL
 @app.route('/shorten/<short_code>', methods=['DELETE'])
 def delete_url(short_code):
-    # Find and delete the document with the given short_code
     result = mongo.db.urls.delete_one({"short_code": short_code})
 
     if result.deleted_count == 0:
@@ -114,15 +130,14 @@ def delete_url(short_code):
         "short_code": short_code
     }), 200
 
+# Endpoint to get URL statistics
 @app.route('/shorten/<short_code>/stats', methods=['GET'])
 def get_url_stats(short_code):
-    # Find the document with the given short_code
     url_document = mongo.db.urls.find_one({"short_code": short_code})
 
     if not url_document:
         return jsonify({"error": "Short URL not found"}), 404
 
-    # Return the statistics
     return jsonify({
         "short_code": short_code,
         "original_url": url_document["original_url"],
