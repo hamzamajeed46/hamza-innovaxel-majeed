@@ -48,6 +48,26 @@ def shorten_url():
     else:
         return jsonify({"error": "Failed to create short URL"}), 500
 
+@app.route('/shorten/<short_code>', methods=['GET'])
+def retrieve_url(short_code):
+    # Find the document with the given short_code
+    url_document = mongo.db.urls.find_one({"short_code": short_code})
+
+    if not url_document:
+        return jsonify({"error": "Short URL not found"}), 404
+
+    # Increment the access_count
+    mongo.db.urls.update_one(
+        {"short_code": short_code},
+        {"$inc": {"access_count": 1}}
+    )
+
+    # Return the original URL
+    return jsonify({
+        "original_url": url_document["original_url"],
+        "short_code": short_code,
+        "access_count": url_document["access_count"] + 1  # Incremented value
+    }), 200
 
 @app.route('/')
 def home():
