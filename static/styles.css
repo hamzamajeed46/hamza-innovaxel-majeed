@@ -1,1 +1,119 @@
-/* This file is intentionally left blank. */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    margin-bottom: 20px; /* Add space between sections */
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333333;
+    font-size: 24px;
+}
+
+.box-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px; /* Space between the boxes */
+}
+
+.box {
+    background: #ffffff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 45%; /* Reduce the size of the boxes */
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #333333;
+    font-size: 18px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-size: 14px;
+    color: #555555;
+    text-align: left;
+}
+
+input[type="url"],
+input[type="text"] {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 8px;
+    font-size: 14px;
+    color: #ffffff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#error {
+    color: #ff0000;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+#result,
+#update-result,
+#retrieved-result {
+    margin-top: 15px;
+    text-align: left;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+}
+
+#result p,
+#update-result p,
+#retrieved-result p {
+    margin: 0;
+    font-size: 14px;
+    color: #333333;
+}
+
+#result a,
+#retrieved-result a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#result a:hover,
+#retrieved-result a:hover {
+    text-decoration: underline;
+}

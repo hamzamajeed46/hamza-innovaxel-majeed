@@ -1,1 +1,104 @@
-<!-- This file is intentionally left blank. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <section class="container">
+        <h1>URL Shortener</h1>
+        <div class="box-container">
+            <!-- Box for shortening a URL -->
+            <div class="box">
+                <h2>Add a URL to shorten</h2>
+                <form method="POST" action="/shorten">
+                    <label for="original_url">Enter URL to Shorten:</label>
+                    <input type="url" id="original_url" name="original_url" placeholder="https://example.com" required>
+                    <button type="submit">Shorten URL</button>
+                </form>
+                {% if short_code and not retrieved_url %}
+                <div id="result">
+                    <p><strong>Shortened URL:</strong> <a href="/shorten/{{ short_code }}" target="_blank">{{ request.host_url }}shorten/{{ short_code }}</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Box for updating a URL -->
+            <div class="box">
+                <h2>Update an Existing Short URL</h2>
+                <form id="update-form">
+                    <label for="short_code_update">Enter Short Code:</label>
+                    <input type="text" id="short_code_update" name="short_code" placeholder="e.g., abc123" required>
+
+                    <label for="new_original_url">Enter New Original URL:</label>
+                    <input type="url" id="new_original_url" name="new_original_url" placeholder="https://example.com" required>
+
+                    <button type="submit">Update URL</button>
+                </form>
+                <div id="update-result" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="box">
+        <!-- Form to retrieve a URL -->
+        <h2>Retrieve an existing URL</h2>
+        <form method="GET" action="/retrieve">
+            <label for="short_code">Enter Short Code to Retrieve URL:</label>
+            <input type="text" id="short_code" name="short_code" placeholder="e.g., abc123" required>
+            <button type="submit">Retrieve URL</button>
+        </form>
+
+        {% if retrieved_url %}
+        <div id="retrieved-result">
+            <p><strong>Original URL:</strong> <a href="{{ retrieved_url }}" target="_blank">{{ retrieved_url }}</a></p>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div id="error">{{ error }}</div>
+        {% endif %}
+    </div>
+    </section>
+
+    <script>
+        const updateForm = document.getElementById('update-form');
+        const updateResult = document.getElementById('update-result');
+
+        updateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const shortCode = document.getElementById('short_code_update').value;
+            const newOriginalUrl = document.getElementById('new_original_url').value;
+
+            if (!shortCode || !newOriginalUrl) {
+                updateResult.innerHTML = '<p style="color: red;">Both fields are required.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/shorten/${shortCode}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ original_url: newOriginalUrl }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    updateResult.innerHTML = `<p style="color: green;">${data.message}</p>`;
+                } else {
+                    updateResult.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                }
+            } catch (error) {
+                updateResult.innerHTML = '<p style="color: red;">An error occurred while updating the URL.</p>';
+            }
+        });
+    </script>
+</body>
+</html>

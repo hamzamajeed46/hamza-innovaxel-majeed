@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, render_template
 from flask_pymongo import PyMongo
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 import string
 import re
@@ -30,23 +30,34 @@ def generate_short_code():
 # Endpoint to create a short URL
 @app.route('/shorten', methods=['POST'])
 def shorten_url():
-    data = request.get_json()
-    original_url = data.get('original_url')
+    # Check if the request is from a form submission or an API call
+    if request.content_type == 'application/json':
+        data = request.get_json()
+        original_url = data.get('original_url')
+    else:
+        original_url = request.form.get('original_url')
 
+    # Validate the original URL
     if not original_url:
-        return jsonify({"error": "Original URL is required"}), 400
+        if request.content_type == 'application/json':
+            return jsonify({"error": "Original URL is required"}), 400
+        return render_template('index.html', error="Original URL is required")
 
     if not is_valid_url(original_url):
-        return jsonify({"error": "Invalid URL format"}), 400
+        if request.content_type == 'application/json':
+            return jsonify({"error": "Invalid URL format"}), 400
+        return render_template('index.html', error="Invalid URL format")
 
     # Check if the original URL already exists
     existing_url = mongo.db.urls.find_one({"original_url": original_url})
     if existing_url:
-        return jsonify({
-            "message": "Original URL is already shortened!",
-            "short_code": existing_url["short_code"],
-            "original_url": original_url
-        }), 200
+        if request.content_type == 'application/json':
+            return jsonify({
+                "message": "Original URL is already shortened!",
+                "short_code": existing_url["short_code"],
+                "original_url": original_url
+            }), 200
+        return render_template('index.html', short_code=existing_url["short_code"])
 
     # Generate a unique short code
     short_code = generate_short_code()
@@ -55,30 +66,36 @@ def shorten_url():
     url_document = {
         "original_url": original_url,
         "short_code": short_code,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
         "access_count": 0
     }
 
     # Insert into the 'urls' collection
-    result = mongo.db.urls.insert_one(url_document)
-    if result.inserted_id:
+    mongo.db.urls.insert_one(url_document)
+
+    if request.content_type == 'application/json':
         return jsonify({
             "message": "Short URL created successfully!",
             "short_code": short_code,
             "original_url": original_url
         }), 201
-    else:
-        return jsonify({"error": "Failed to create short URL"}), 500
+    return render_template('index.html', short_code=short_code)
 
 # Endpoint to retrieve the original URL
-@app.route('/shorten/<short_code>', methods=['GET'])
-def retrieve_url(short_code):
+@app.route('/retrieve', methods=['GET'])
+def retrieve_url():
+    # Get the short_code from the query parameter
+    short_code = request.args.get('short_code')
+
+    if not short_code:
+        return render_template('index.html', error="Short code is required")
+
     # Find the document with the given short_code
     url_document = mongo.db.urls.find_one({"short_code": short_code})
 
     if not url_document:
-        return jsonify({"error": "Short URL not found"}), 404
+        return render_template('index.html', error="Short code not found")
 
     # Increment the access_count
     mongo.db.urls.update_one(
@@ -86,7 +103,8 @@ def retrieve_url(short_code):
         {"$inc": {"access_count": 1}}
     )
 
-    return redirect(url_document["original_url"])
+    # Render the template with the original URL
+    return render_template('index.html', retrieved_url=url_document["original_url"], short_code=short_code)
 
 # Endpoint to update the original URL
 @app.route('/shorten/<short_code>', methods=['PUT'])
@@ -104,7 +122,7 @@ def update_url(short_code):
         {"short_code": short_code},
         {"$set": {
             "original_url": new_original_url,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
 
@@ -146,9 +164,27 @@ def get_url_stats(short_code):
         "access_count": url_document["access_count"]
     }), 200
 
+@app.route('/shorten/<short_code>', methods=['GET'])
+def redirect_to_original(short_code):
+    # Find the document with the given short_code
+    url_document = mongo.db.urls.find_one({"short_code": short_code})
+
+    if not url_document:
+        # Return a 404 error if the short_code is not found
+        return jsonify({"error": "Short code not found"}), 404
+
+    # Increment the access_count
+    mongo.db.urls.update_one(
+        {"short_code": short_code},
+        {"$inc": {"access_count": 1}}
+    )
+
+    # Redirect to the original URL
+    return redirect(url_document["original_url"])
+
 @app.route('/')
 def home():
-    return "MongoDB connection is set up!"
+    return render_template('index.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
