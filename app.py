@@ -47,6 +47,7 @@ def shorten_url():
         }), 201
     else:
         return jsonify({"error": "Failed to create short URL"}), 500
+from flask import Flask, request, jsonify, redirect
 
 @app.route('/shorten/<short_code>', methods=['GET'])
 def retrieve_url(short_code):
@@ -62,12 +63,8 @@ def retrieve_url(short_code):
         {"$inc": {"access_count": 1}}
     )
 
-    # Return the original URL
-    return jsonify({
-        "original_url": url_document["original_url"],
-        "short_code": short_code,
-        "access_count": url_document["access_count"] + 1  # Incremented value
-    }), 200
+    # Redirect to the original URL
+    return redirect(url_document["original_url"])
 
 @app.route('/')
 def home():
