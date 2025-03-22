@@ -93,6 +93,19 @@ def update_url(short_code):
         "new_original_url": new_original_url
     }), 200
 
+@app.route('/shorten/<short_code>', methods=['DELETE'])
+def delete_url(short_code):
+    # Find and delete the document with the given short_code
+    result = mongo.db.urls.delete_one({"short_code": short_code})
+
+    if result.deleted_count == 0:
+        return jsonify({"error": "Short URL not found"}), 404
+
+    return jsonify({
+        "message": "Short URL deleted successfully!",
+        "short_code": short_code
+    }), 200
+
 @app.route('/')
 def home():
     return "MongoDB connection is set up!"
