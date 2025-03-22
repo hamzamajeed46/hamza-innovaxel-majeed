@@ -12,6 +12,7 @@ flask-project
 │   └── index.html       # HTML template for the home page
 ├── static
 │   └── styles.css       # CSS file for styling
+│   └── main.js       # Javascript for requests
 └── README.md            # Project documentation
 ```
 
