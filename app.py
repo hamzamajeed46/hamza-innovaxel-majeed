@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 from flask_pymongo import PyMongo
 from datetime import datetime
 import random
@@ -65,6 +65,33 @@ def retrieve_url(short_code):
 
     # Redirect to the original URL
     return redirect(url_document["original_url"])
+
+@app.route('/shorten/<short_code>', methods=['PUT'])
+def update_url(short_code):
+    # Get the new data from the request
+    data = request.get_json()
+    new_original_url = data.get('original_url')
+
+    if not new_original_url:
+        return jsonify({"error": "Original URL is required"}), 400
+
+    # Find and update the document with the given short_code
+    result = mongo.db.urls.update_one(
+        {"short_code": short_code},
+        {"$set": {
+            "original_url": new_original_url,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+
+    if result.matched_count == 0:
+        return jsonify({"error": "Short URL not found"}), 404
+
+    return jsonify({
+        "message": "Short URL updated successfully!",
+        "short_code": short_code,
+        "new_original_url": new_original_url
+    }), 200
 
 @app.route('/')
 def home():
